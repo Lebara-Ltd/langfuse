@@ -165,7 +165,6 @@ export default withMiddlewares({
           WHERE s.trace_id = t.id AND s.project_id = ${auth.scope.projectId}
         ) AS s ON true
       `);
-      console.log(traces)
       const totalItems = await prisma.trace.count({
         where: {
           projectId: auth.scope.projectId,
