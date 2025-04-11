@@ -130,10 +130,14 @@ export default withMiddlewares({
           COALESCE(o."totalCost", 0)::DOUBLE PRECISION AS "totalCost",
           COALESCE(o."latency", 0)::double precision AS "latency",
           COALESCE(o."observations", ARRAY[]::text[]) AS "observations",
-          COALESCE(s."scores", ARRAY[]::text[]) AS "scores"
+          COALESCE(s."scores", ARRAY[]::text[]) AS "scores",
+          t.query,
+          t.intent,
+          t.intent_score,
+          t.environment
         FROM (
           SELECT *
-          FROM "traces" t
+          FROM "trace_llm_judgement_analysis" t
           WHERE project_id = ${auth.scope.projectId}
           ${fromTimestampCondition}
           ${toTimestampCondition}
@@ -161,7 +165,6 @@ export default withMiddlewares({
           WHERE s.trace_id = t.id AND s.project_id = ${auth.scope.projectId}
         ) AS s ON true
       `);
-
       const totalItems = await prisma.trace.count({
         where: {
           projectId: auth.scope.projectId,
