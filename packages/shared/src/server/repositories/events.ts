@@ -1049,6 +1049,15 @@ async function getTracesFromEventsTableForPublicApiInternal<T>(
     .from("traces", "t")
     .where(appliedFilter);
 
+  queryBuilder = queryBuilder
+    .withCTE("judgement", {
+      query:
+        "SELECT id, project_id, query, intent, intent_score FROM trace_llm_judgement_analysis WHERE project_id = {projectId: String}",
+      params: { projectId },
+      schema: ["id", "project_id", "query", "intent", "intent_score"],
+    })
+    .leftJoin("judgement", "j", "ON j.id = t.id AND j.project_id = t.project_id");
+
   if (includeScores || filtersNeedScores) {
     const scoresCTE = eventsTracesScoresAggregation({
       projectId,
@@ -1098,6 +1107,10 @@ async function getTracesFromEventsTableForPublicApiInternal<T>(
     queryBuilder.select(
       "CONCAT('/project/', t.project_id, '/traces/', t.id) as htmlPath",
     );
+    queryBuilder
+      .select("nullIf(j.query, '') as query")
+      .select("nullIf(j.intent, '') as intent")
+      .select("j.intent_score as intent_score");
 
     // Conditionally include other field groups
     if (includeIO) {

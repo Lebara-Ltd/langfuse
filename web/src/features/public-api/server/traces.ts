@@ -238,6 +238,7 @@ async function buildTracesBaseQuery(
 
   const queryMiddle = `
   FROM traces t ${shouldUseSkipIndexes ? "" : "FINAL"}
+  LEFT JOIN trace_llm_judgement_analysis j ON j.id = t.id AND j.project_id = t.project_id
   ${select.includeObservations || select.includeMetrics || filtersNeedObservations ? "LEFT JOIN observation_stats o ON t.id = o.trace_id AND t.project_id = o.project_id" : ""}
   ${select.includeScores || filtersNeedScores ? "LEFT JOIN score_stats s ON t.id = s.trace_id AND t.project_id = s.project_id" : ""}
   WHERE t.project_id = {projectId: String}
@@ -277,6 +278,9 @@ async function buildTracesBaseQuery(
       ${select.includeObservations ? ", o.observation_ids as observations" : ""}
       -- Metrics (conditional)
       ${select.includeMetrics ? ", COALESCE(o.latency_milliseconds / 1000, 0) as latency, COALESCE(o.total_cost, 0) as totalCost" : ""}
+      , nullIf(j.query, '') as query
+      , nullIf(j.intent, '') as intent
+      , j.intent_score as intent_score
     ${queryMiddle}
     ${chOrderBy}
     ${shouldUseSkipIndexes ? "LIMIT 1 by t.id, t.project_id" : ""}
@@ -359,6 +363,9 @@ export const generateTracesForPublicApi = async ({
           totalCost?: number;
           latency?: number;
           htmlPath: string;
+          intent: string | null;
+          intent_score: number | null;
+          query: string | null;
         }
       >({
         query,

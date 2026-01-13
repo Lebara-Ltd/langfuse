@@ -57,6 +57,9 @@ const APIExtendedTrace = APITrace.extend({
   totalCost: z.number().nullish(),
   latency: z.number().nullish(),
   htmlPath: z.string(),
+  intent: z.string().nullable(),
+  intent_score: z.number().nullable(),
+  query: z.string().nullable(),
 }).strict();
 
 /**

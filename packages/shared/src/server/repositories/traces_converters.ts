@@ -77,6 +77,9 @@ export const convertClickhouseTracesListToDomain = (
       totalCost: include.metrics ? trace.totalCost : -1,
       latency: include.metrics ? trace.latency : -1,
       htmlPath: trace.htmlPath,
+      intent: trace.intent ?? null,
+      intent_score: trace.intent_score ?? null,
+      query: trace.query ?? null,
     };
   });
 };

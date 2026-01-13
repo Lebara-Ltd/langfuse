@@ -142,6 +142,9 @@ export const traceRecordExtraFields = z.object({
   totalCost: z.number().optional(),
   latency: z.number().optional(),
   htmlPath: z.string().nullable(),
+  intent: z.string().nullable(),
+  intent_score: z.number().nullable(),
+  query: z.string().nullable(),
 });
 
 export type TraceRecordExtraFieldsType = z.infer<typeof traceRecordExtraFields>;
