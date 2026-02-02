@@ -16,6 +16,7 @@ import {
   getObservationsForTrace,
   getScoresForTraces,
   getTraceById,
+  queryClickhouse,
   traceException,
   traceDeletionProcessor,
 } from "@langfuse/shared/src/server";
@@ -41,6 +42,40 @@ export default withMiddlewares({
           `Trace ${traceId} not found within authorized project`,
         );
       }
+
+      const judgementRows = await queryClickhouse<{
+        query: string | null;
+        intent: string | null;
+        intent_score: number | null;
+      }>({
+        query: `
+          SELECT
+            nullIf(query, '') as query,
+            nullIf(intent, '') as intent,
+            intent_score as intent_score
+          FROM trace_llm_judgement_analysis
+          WHERE id = {traceId: String}
+            AND project_id = {projectId: String}
+          LIMIT 1
+        `,
+        params: {
+          traceId,
+          projectId: auth.scope.projectId,
+        },
+        tags: {
+          feature: "tracing",
+          type: "trace",
+          kind: "public-api",
+          projectId: auth.scope.projectId,
+        },
+        preferredClickhouseService: "ReadOnly",
+      });
+      
+      const judgement = judgementRows[0] ?? {
+        query: null,
+        intent: null,
+        intent_score: null,
+      };
 
       const [observations, scores] = await Promise.all([
         getObservationsForTrace({
@@ -139,6 +174,10 @@ export default withMiddlewares({
             new Decimal(0),
           )
           .toNumber(),
+
+        intent: judgement.intent,
+        intent_score: judgement.intent_score,
+        query: judgement.query,
       };
     },
   }),
